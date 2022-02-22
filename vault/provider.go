@@ -558,6 +558,10 @@ var (
 			Resource:      sshSecretBackendRoleResource(),
 			PathInventory: []string{"/ssh/roles/{role}"},
 		},
+		"vault_sys_init": {
+			Resource:      sysInitResource(),
+			PathInventory: []string{"/sys"},
+		},
 		"vault_identity_entity": {
 			Resource:      identityEntityResource(),
 			PathInventory: []string{"/identity/entity"},
