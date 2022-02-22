@@ -70,7 +70,7 @@ func sysUnsealResource() *schema.Resource {
 func sysUnsealWrite(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*api.Client)
 
-	keys := d.Get("secret_shares").([]string)
+	keys := d.Get("keys").([]string)
 
 	log.Printf("[DEBUG] Unsealing vault")
 
