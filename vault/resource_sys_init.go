@@ -24,13 +24,11 @@ func sysInitResource() *schema.Resource {
 				Type:        schema.TypeInt,
 				Required:    true,
 				Description: "Number of key shares to split the generated master key into. This is the number of \"unseal keys\" to generate",
-				Default:     5,
 			},
 			"secret_threshold": {
 				Type:        schema.TypeInt,
 				Required:    true,
 				Description: "Number of key shares required to reconstruct the master key. This must be less than or equal to -key-shares",
-				Default:     3,
 			},
 			"stored_shares": {
 				Type:        schema.TypeInt,
