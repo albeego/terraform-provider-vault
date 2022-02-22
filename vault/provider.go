@@ -611,7 +611,11 @@ var (
 		},
 		"vault_sys_init": {
 			Resource:      sysInitResource(),
-			PathInventory: []string{"/sys"},
+			PathInventory: []string{"/sys/init"},
+		},
+		"vault_sys_unseal": {
+			Resource:      sysUnsealResource(),
+			PathInventory: []string{"/sys/unseal"},
 		},
 		"vault_identity_entity": {
 			Resource:      UpdateSchemaResource(identityEntityResource()),
