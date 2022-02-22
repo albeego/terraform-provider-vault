@@ -35,11 +35,15 @@ func sysInitResource() *schema.Resource {
 			"stored_shares": {
 				Type:        schema.TypeInt,
 				Required:    false,
+				Computed:    true,
+				Optional:    true,
 				Description: "Number of unseal keys to store on an HSM. This must be equal to -key-shares",
 			},
 			"pgp_keys": {
 				Type:        schema.TypeList,
 				Required:    false,
+				Computed:    true,
+				Optional:    true,
 				Description: "Comma-separated list of paths to files on disk containing public PGP keys OR a comma-separated list of Keybase usernames using the format keybase:<username>. When supplied, the generated unseal keys will be encrypted and base64-encoded in the order specified in this list. The number of entries must match -key-shares, unless -stored-shares are used",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -48,16 +52,22 @@ func sysInitResource() *schema.Resource {
 			"recovery_shares": {
 				Type:        schema.TypeInt,
 				Required:    false,
+				Computed:    true,
+				Optional:    true,
 				Description: "Number of key shares to split the recovery key into. This is only used Auto Unseal seals (HSM, KMS and Transit seals)",
 			},
 			"recovery_threshold": {
 				Type:        schema.TypeInt,
 				Required:    false,
+				Computed:    true,
+				Optional:    true,
 				Description: "Number of key shares required to reconstruct the recovery key. This is only used Auto Unseal seals (HSM, KMS and Transit seals)",
 			},
 			"recovery_pgp_keys": {
 				Type:        schema.TypeList,
 				Required:    false,
+				Computed:    true,
+				Optional:    true,
 				Description: "Behaves like -pgp-keys, but for the recovery key shares. This is only used with Auto Unseal seals (HSM, KMS and Transit seals)",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -66,6 +76,8 @@ func sysInitResource() *schema.Resource {
 			"root_token_pgp_key": {
 				Type:        schema.TypeString,
 				Required:    false,
+				Computed:    true,
+				Optional:    true,
 				Description: "Path to a file on disk containing a binary or base64-encoded public PGP key. This can also be specified as a Keybase username using the format keybase:<username>. When supplied, the generated root token will be encrypted and base64-encoded with the given public key",
 			},
 			"keys": {
