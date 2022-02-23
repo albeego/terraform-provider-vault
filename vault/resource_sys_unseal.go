@@ -70,7 +70,11 @@ func sysUnsealResource() *schema.Resource {
 func sysUnsealWrite(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*api.Client)
 
-	keys := d.Get("keys").([]string)
+	ikeys := d.Get("keys").([]interface{})
+	keys := make([]string, 0, len(ikeys))
+	for _, ikey := range ikeys {
+		keys = append(keys, ikey.(string))
+	}
 
 	log.Printf("[DEBUG] Unsealing vault")
 
