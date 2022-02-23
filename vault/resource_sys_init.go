@@ -119,10 +119,7 @@ func sysInitResource() *schema.Resource {
 				Description: "Recovery key shares in base64",
 			},
 			"root_token": {
-				Type: schema.TypeList,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
+				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
 				ForceNew:    true,
