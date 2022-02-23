@@ -87,13 +87,17 @@ func sysUnsealWrite(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("can't unseal vault, need: %d keys but only have %d", result.T+1, len(keys))
 	}
 	for i := 1; i < len(keys); i++ {
-		result, err = client.Sys().Unseal(keys[0])
+		result, err = client.Sys().Unseal(keys[i])
 		if err != nil {
 			return fmt.Errorf("error unsealing vault: %s", err)
 		}
 		if result.Progress == 0 {
 			break
 		}
+	}
+
+	if result.Sealed {
+		return fmt.Errorf("error unsealing vault threshold: %d, number of shares: %d, progress: %d", result.T, result.N, result.Progress)
 	}
 
 	d.SetId(uuid.New().String())
