@@ -23,6 +23,7 @@ func sysUnsealResource() *schema.Resource {
 			"keys": {
 				Type:        schema.TypeList,
 				Required:    true,
+				Sensitive:   true,
 				Description: "Unseal keys",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
