@@ -86,6 +86,7 @@ func sysInitResource() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				ForceNew:    true,
+				Sensitive:   true,
 				Description: "Key shares the generated master key is split into. These are the \"unseal keys\"",
 			},
 			"keys_base64": {
@@ -96,6 +97,7 @@ func sysInitResource() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				ForceNew:    true,
+				Sensitive:   true,
 				Description: "Key shares in base64",
 			},
 			"recovery_keys": {
@@ -106,6 +108,7 @@ func sysInitResource() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				ForceNew:    true,
+				Sensitive:   true,
 				Description: "Key shares the recovery key is split into. These are only used in Auto Unseal seals (HSM, KMS and Transit seals)",
 			},
 			"recovery_keys_base64": {
@@ -116,6 +119,7 @@ func sysInitResource() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				ForceNew:    true,
+				Sensitive:   true,
 				Description: "Recovery key shares in base64",
 			},
 			"root_token": {
@@ -123,6 +127,7 @@ func sysInitResource() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				ForceNew:    true,
+				Sensitive:   true,
 				Description: "The generated root token",
 			},
 		},
