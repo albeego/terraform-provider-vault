@@ -275,6 +275,10 @@ var (
 			Resource:      genericSecretDataSource(),
 			PathInventory: []string{"/secret/data/{path}"},
 		},
+		"vault_ca_cert": {
+			Resource:      genericSecretDataSource(),
+			PathInventory: []string{"/pki/ca/pem"},
+		},
 		"vault_policy_document": {
 			Resource:      policyDocumentDataSource(),
 			PathInventory: []string{"/sys/policy/{name}"},
