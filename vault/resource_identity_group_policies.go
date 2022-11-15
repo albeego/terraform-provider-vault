@@ -5,8 +5,9 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/vault/api"
 
+	"github.com/hashicorp/terraform-provider-vault/internal/identity/group"
+	"github.com/hashicorp/terraform-provider-vault/internal/provider"
 	"github.com/hashicorp/terraform-provider-vault/util"
 )
 
@@ -14,7 +15,7 @@ func identityGroupPoliciesResource() *schema.Resource {
 	return &schema.Resource{
 		Create: identityGroupPoliciesUpdate,
 		Update: identityGroupPoliciesUpdate,
-		Read:   identityGroupPoliciesRead,
+		Read:   ReadWrapper(identityGroupPoliciesRead),
 		Delete: identityGroupPoliciesDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -50,14 +51,18 @@ func identityGroupPoliciesResource() *schema.Resource {
 }
 
 func identityGroupPoliciesUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*api.Client)
+	client, e := provider.GetClient(d, meta)
+	if e != nil {
+		return e
+	}
+
 	id := d.Get("group_id").(string)
 
 	log.Printf("[DEBUG] Updating IdentityGroupPolicies %q", id)
-	path := identityGroupIDPath(id)
+	path := group.IdentityGroupIDPath(id)
 
-	vaultMutexKV.Lock(path)
-	defer vaultMutexKV.Unlock(path)
+	provider.VaultMutexKV.Lock(path)
+	defer provider.VaultMutexKV.Unlock(path)
 
 	data := make(map[string]interface{})
 	policies := d.Get("policies").(*schema.Set).List()
@@ -94,13 +99,17 @@ func identityGroupPoliciesUpdate(d *schema.ResourceData, meta interface{}) error
 }
 
 func identityGroupPoliciesRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*api.Client)
+	client, e := provider.GetClient(d, meta)
+	if e != nil {
+		return e
+	}
+
 	id := d.Id()
 
 	log.Printf("[DEBUG] Read IdentityGroupPolicies %s", id)
-	resp, err := readIdentityGroup(client, id, d.IsNewResource())
+	resp, err := group.ReadIdentityGroup(client, id, d.IsNewResource())
 	if err != nil {
-		if isIdentityNotFoundError(err) {
+		if group.IsIdentityNotFoundError(err) {
 			log.Printf("[WARN] IdentityGroupPolicies %q not found, removing from state", id)
 			d.SetId("")
 			return nil
@@ -143,14 +152,18 @@ func identityGroupPoliciesRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func identityGroupPoliciesDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*api.Client)
+	client, e := provider.GetClient(d, meta)
+	if e != nil {
+		return e
+	}
+
 	id := d.Get("group_id").(string)
 
 	log.Printf("[DEBUG] Deleting IdentityGroupPolicies %q", id)
-	path := identityGroupIDPath(id)
+	path := group.IdentityGroupIDPath(id)
 
-	vaultMutexKV.Lock(path)
-	defer vaultMutexKV.Unlock(path)
+	provider.VaultMutexKV.Lock(path)
+	defer provider.VaultMutexKV.Unlock(path)
 
 	data := make(map[string]interface{})
 
