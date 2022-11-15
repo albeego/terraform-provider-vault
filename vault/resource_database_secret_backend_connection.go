@@ -53,6 +53,10 @@ var (
 		name:              "influxdb",
 		defaultPluginName: "influxdb" + dbPluginSuffix,
 	}
+	dbEngineInfluxDBv2 = &dbEngine{
+		name:              "influxdbv2",
+		defaultPluginName: "influxdbv2" + dbPluginSuffix,
+	}
 	dbEngineMSSQL = &dbEngine{
 		name:              "mssql",
 		defaultPluginName: "mssql" + dbPluginSuffix,
@@ -104,6 +108,7 @@ var (
 		dbEngineElasticSearch,
 		dbEngineHana,
 		dbEngineInfluxDB,
+		dbEngineInfluxDBv2,
 		dbEngineMSSQL,
 		dbEngineMongoDB,
 		dbEngineMongoDBAtlas,
@@ -464,6 +469,72 @@ func databaseSecretBackendConnectionResource() *schema.Resource {
 				ConflictsWith: util.CalculateConflictsWith(dbEngineInfluxDB.Name(), dbEngineTypes),
 			},
 
+			dbEngineInfluxDBv2.name: {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Connection parameters for the influxdbv2-database-plugin plugin.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"host": {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "InfluxDBv2 host to connect to.",
+						},
+						"port": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							Description:  "The transport port to use to connect to InfluxDBv2.",
+							Default:      8086,
+							ValidateFunc: validation.IsPortNumber,
+						},
+						"token": {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "Specifies the API Token to use for superuser access.",
+							Sensitive:   true,
+						},
+						"tls": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Whether to use TLS when connecting to Influxdb.",
+							Default:     true,
+						},
+						"insecure_tls": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Whether to skip verification of the server certificate when using TLS.",
+							Default:     false,
+						},
+						"pem_bundle": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Concatenated PEM blocks containing a certificate and private key; a certificate, private key, and issuing CA certificate; or just a CA certificate.",
+							Sensitive:   true,
+						},
+						"pem_json": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Description:  "Specifies JSON containing a certificate and private key; a certificate, private key, and issuing CA certificate; or just a CA certificate.",
+							Sensitive:    true,
+							ValidateFunc: validation.StringIsJSON,
+						},
+						"connect_timeout": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     5,
+							Description: "The number of seconds to use as a connection timeout.",
+						},
+						"username_template": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Template describing how dynamic usernames are generated.",
+						},
+					},
+				},
+				MaxItems:      1,
+				ConflictsWith: util.CalculateConflictsWith(dbEngineInfluxDBv2.Name(), dbEngineTypes),
+			},
+
 			dbEngineMongoDB.name: {
 				Type:        schema.TypeList,
 				Optional:    true,
@@ -808,6 +879,8 @@ func getDatabaseAPIData(d *schema.ResourceData) (map[string]interface{}, error) 
 		setCouchbaseDatabaseConnectionData(d, "couchbase.0.", data)
 	case dbEngineInfluxDB:
 		setInfluxDBDatabaseConnectionData(d, "influxdb.0.", data)
+	case dbEngineInfluxDBv2:
+		setInfluxDBv2DatabaseConnectionData(d, "influxdbv2.0.", data)
 	case dbEngineHana:
 		setDatabaseConnectionDataWithUserPass(d, "hana.0.", data)
 	case dbEngineMongoDB:
@@ -1064,6 +1137,55 @@ func getInfluxDBConnectionDetailsFromResponse(d *schema.ResourceData, prefix str
 	return []map[string]interface{}{result}
 }
 
+func getInfluxDBv2ConnectionDetailsFromResponse(d *schema.ResourceData, prefix string, resp *api.Secret) []map[string]interface{} {
+	details := resp.Data["connection_details"]
+	data, ok := details.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	result := map[string]interface{}{}
+
+	if v, ok := data["host"]; ok {
+		result["host"] = v.(string)
+	}
+	if v, ok := data["port"]; ok {
+		port, _ := v.(json.Number).Int64()
+		result["port"] = port
+	}
+	if v, ok := data["token"]; ok {
+		result["token"] = v.(string)
+	}
+	if v, ok := data["tls"]; ok {
+		result["tls"] = v.(bool)
+	}
+	if v, ok := data["insecure_tls"]; ok {
+		result["insecure_tls"] = v.(bool)
+	}
+	if v, ok := data["pem_bundle"]; ok {
+		result["pem_bundle"] = v.(string)
+	} else if v, ok := d.GetOk(prefix + "pem_bundle"); ok {
+		result["pem_bundle"] = v.(string)
+	}
+	if v, ok := data["pem_json"]; ok {
+		result["pem_json"] = v.(string)
+	} else if v, ok := d.GetOk(prefix + "pem_json"); ok {
+		result["pem_json"] = v.(string)
+	}
+	if v, ok := data["protocol_version"]; ok {
+		protocol, _ := v.(json.Number).Int64()
+		result["protocol_version"] = int64(protocol)
+	}
+	if v, ok := data["connect_timeout"]; ok {
+		timeout, _ := v.(json.Number).Int64()
+		result["connect_timeout"] = timeout
+	}
+	if v, ok := data["username_template"]; ok {
+		result["username_template"] = v.(string)
+	}
+
+	return []map[string]interface{}{result}
+}
+
 func getSnowflakeConnectionDetailsFromResponse(d *schema.ResourceData, prefix string, resp *api.Secret) []map[string]interface{} {
 	commonDetails := getConnectionDetailsFromResponseWithUserPass(d, prefix, resp)
 	details := resp.Data["connection_details"]
@@ -1209,6 +1331,36 @@ func setInfluxDBDatabaseConnectionData(d *schema.ResourceData, prefix string, da
 	}
 	if v, ok := d.GetOk(prefix + "password"); ok {
 		data["password"] = v.(string)
+	}
+	if v, ok := d.GetOkExists(prefix + "tls"); ok {
+		data["tls"] = v.(bool)
+	}
+	if v, ok := d.GetOkExists(prefix + "insecure_tls"); ok {
+		data["insecure_tls"] = v.(bool)
+	}
+	if v, ok := d.GetOkExists(prefix + "pem_bundle"); ok {
+		data["pem_bundle"] = v.(string)
+	}
+	if v, ok := d.GetOkExists(prefix + "pem_json"); ok {
+		data["pem_json"] = v.(string)
+	}
+	if v, ok := d.GetOkExists(prefix + "connect_timeout"); ok {
+		data["connect_timeout"] = v.(int)
+	}
+	if v, ok := d.GetOkExists(prefix + "username_template"); ok {
+		data["username_template"] = v.(int)
+	}
+}
+
+func setInfluxDBv2DatabaseConnectionData(d *schema.ResourceData, prefix string, data map[string]interface{}) {
+	if v, ok := d.GetOkExists(prefix + "host"); ok {
+		data["host"] = v.(string)
+	}
+	if v, ok := d.GetOkExists(prefix + "port"); ok {
+		data["port"] = v.(int)
+	}
+	if v, ok := d.GetOk(prefix + "token"); ok {
+		data["token"] = v.(string)
 	}
 	if v, ok := d.GetOkExists(prefix + "tls"); ok {
 		data["tls"] = v.(bool)
@@ -1419,6 +1571,8 @@ func databaseSecretBackendConnectionRead(d *schema.ResourceData, meta interface{
 		d.Set("couchbase", getCouchbaseConnectionDetailsFromResponse(d, "couchbase.0.", resp))
 	case dbEngineInfluxDB:
 		d.Set("influxdb", getInfluxDBConnectionDetailsFromResponse(d, "influxdb.0.", resp))
+	case dbEngineInfluxDBv2:
+		d.Set("influxdbv2", getInfluxDBv2ConnectionDetailsFromResponse(d, "influxdbv2.0.", resp))
 	case dbEngineHana:
 		d.Set("hana", getConnectionDetailsFromResponseWithUserPass(d, "hana.0.", resp))
 	case dbEngineMongoDB:
