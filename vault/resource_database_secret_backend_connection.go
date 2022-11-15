@@ -387,143 +387,143 @@ func getDatabaseSchema(typ schema.ValueType) schemaMap {
 		},
 		dbEngineInfluxDB.name: {
 			Type:        typ,
-				Optional:    true,
-				Description: "Connection parameters for the influxdb-database-plugin plugin.",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"host": {
-							Type:        schema.TypeString,
-							Required:    true,
-							Description: "Influxdb host to connect to.",
-						},
-						"port": {
-							Type:         schema.TypeInt,
-							Optional:     true,
-							Description:  "The transport port to use to connect to Influxdb.",
-							Default:      8086,
-							ValidateFunc: validation.IsPortNumber,
-						},
-						"username": {
-							Type:        schema.TypeString,
-							Required:    true,
-							Description: "Specifies the username to use for superuser access.",
-						},
-						"password": {
-							Type:        schema.TypeString,
-							Required:    true,
-							Description: "Specifies the password corresponding to the given username.",
-							Sensitive:   true,
-						},
-						"tls": {
-							Type:        schema.TypeBool,
-							Optional:    true,
-							Description: "Whether to use TLS when connecting to Influxdb.",
-							Default:     true,
-						},
-						"insecure_tls": {
-							Type:        schema.TypeBool,
-							Optional:    true,
-							Description: "Whether to skip verification of the server certificate when using TLS.",
-							Default:     false,
-						},
-						"pem_bundle": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "Concatenated PEM blocks containing a certificate and private key; a certificate, private key, and issuing CA certificate; or just a CA certificate.",
-							Sensitive:   true,
-						},
-						"pem_json": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							Description:  "Specifies JSON containing a certificate and private key; a certificate, private key, and issuing CA certificate; or just a CA certificate.",
-							Sensitive:    true,
-							ValidateFunc: validation.StringIsJSON,
-						},
-						"connect_timeout": {
-							Type:        schema.TypeInt,
-							Optional:    true,
-							Default:     5,
-							Description: "The number of seconds to use as a connection timeout.",
-						},
-						"username_template": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "Template describing how dynamic usernames are generated.",
-						},
+			Optional:    true,
+			Description: "Connection parameters for the influxdb-database-plugin plugin.",
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"host": {
+						Type:        schema.TypeString,
+						Required:    true,
+						Description: "Influxdb host to connect to.",
+					},
+					"port": {
+						Type:         schema.TypeInt,
+						Optional:     true,
+						Description:  "The transport port to use to connect to Influxdb.",
+						Default:      8086,
+						ValidateFunc: validation.IsPortNumber,
+					},
+					"username": {
+						Type:        schema.TypeString,
+						Required:    true,
+						Description: "Specifies the username to use for superuser access.",
+					},
+					"password": {
+						Type:        schema.TypeString,
+						Required:    true,
+						Description: "Specifies the password corresponding to the given username.",
+						Sensitive:   true,
+					},
+					"tls": {
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Description: "Whether to use TLS when connecting to Influxdb.",
+						Default:     true,
+					},
+					"insecure_tls": {
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Description: "Whether to skip verification of the server certificate when using TLS.",
+						Default:     false,
+					},
+					"pem_bundle": {
+						Type:        schema.TypeString,
+						Optional:    true,
+						Description: "Concatenated PEM blocks containing a certificate and private key; a certificate, private key, and issuing CA certificate; or just a CA certificate.",
+						Sensitive:   true,
+					},
+					"pem_json": {
+						Type:         schema.TypeString,
+						Optional:     true,
+						Description:  "Specifies JSON containing a certificate and private key; a certificate, private key, and issuing CA certificate; or just a CA certificate.",
+						Sensitive:    true,
+						ValidateFunc: validation.StringIsJSON,
+					},
+					"connect_timeout": {
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Default:     5,
+						Description: "The number of seconds to use as a connection timeout.",
+					},
+					"username_template": {
+						Type:        schema.TypeString,
+						Optional:    true,
+						Description: "Template describing how dynamic usernames are generated.",
 					},
 				},
-				MaxItems:      1,
-				ConflictsWith: util.CalculateConflictsWith(dbEngineInfluxDB.Name(), dbEngineTypes),
 			},
+			MaxItems:      1,
+			ConflictsWith: util.CalculateConflictsWith(dbEngineInfluxDB.Name(), dbEngineTypes),
+		},
 
-			dbEngineInfluxDBv2.name: {
-				Type:        schema.TypeList,
-				Optional:    true,
-				Description: "Connection parameters for the influxdbv2-database-plugin plugin.",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"host": {
-							Type:        schema.TypeString,
-							Required:    true,
-							Description: "InfluxDBv2 host to connect to.",
-						},
-						"port": {
-							Type:         schema.TypeInt,
-							Optional:     true,
-							Description:  "The transport port to use to connect to InfluxDBv2.",
-							Default:      8086,
-							ValidateFunc: validation.IsPortNumber,
-						},
-						"token": {
-							Type:        schema.TypeString,
-							Required:    true,
-							Description: "Specifies the API Token to use for superuser access.",
-							Sensitive:   true,
-						},
-						"tls": {
-							Type:        schema.TypeBool,
-							Optional:    true,
-							Description: "Whether to use TLS when connecting to Influxdb.",
-							Default:     true,
-						},
-						"insecure_tls": {
-							Type:        schema.TypeBool,
-							Optional:    true,
-							Description: "Whether to skip verification of the server certificate when using TLS.",
-							Default:     false,
-						},
-						"pem_bundle": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "Concatenated PEM blocks containing a certificate and private key; a certificate, private key, and issuing CA certificate; or just a CA certificate.",
-							Sensitive:   true,
-						},
-						"pem_json": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							Description:  "Specifies JSON containing a certificate and private key; a certificate, private key, and issuing CA certificate; or just a CA certificate.",
-							Sensitive:    true,
-							ValidateFunc: validation.StringIsJSON,
-						},
-						"connect_timeout": {
-							Type:        schema.TypeInt,
-							Optional:    true,
-							Default:     5,
-							Description: "The number of seconds to use as a connection timeout.",
-						},
-						"username_template": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "Template describing how dynamic usernames are generated.",
-						},
+		dbEngineInfluxDBv2.name: {
+			Type:        schema.TypeList,
+			Optional:    true,
+			Description: "Connection parameters for the influxdbv2-database-plugin plugin.",
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"host": {
+						Type:        schema.TypeString,
+						Required:    true,
+						Description: "InfluxDBv2 host to connect to.",
+					},
+					"port": {
+						Type:         schema.TypeInt,
+						Optional:     true,
+						Description:  "The transport port to use to connect to InfluxDBv2.",
+						Default:      8086,
+						ValidateFunc: validation.IsPortNumber,
+					},
+					"token": {
+						Type:        schema.TypeString,
+						Required:    true,
+						Description: "Specifies the API Token to use for superuser access.",
+						Sensitive:   true,
+					},
+					"tls": {
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Description: "Whether to use TLS when connecting to Influxdb.",
+						Default:     true,
+					},
+					"insecure_tls": {
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Description: "Whether to skip verification of the server certificate when using TLS.",
+						Default:     false,
+					},
+					"pem_bundle": {
+						Type:        schema.TypeString,
+						Optional:    true,
+						Description: "Concatenated PEM blocks containing a certificate and private key; a certificate, private key, and issuing CA certificate; or just a CA certificate.",
+						Sensitive:   true,
+					},
+					"pem_json": {
+						Type:         schema.TypeString,
+						Optional:     true,
+						Description:  "Specifies JSON containing a certificate and private key; a certificate, private key, and issuing CA certificate; or just a CA certificate.",
+						Sensitive:    true,
+						ValidateFunc: validation.StringIsJSON,
+					},
+					"connect_timeout": {
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Default:     5,
+						Description: "The number of seconds to use as a connection timeout.",
+					},
+					"username_template": {
+						Type:        schema.TypeString,
+						Optional:    true,
+						Description: "Template describing how dynamic usernames are generated.",
 					},
 				},
-				MaxItems:      1,
-				ConflictsWith: util.CalculateConflictsWith(dbEngineInfluxDBv2.Name(), dbEngineTypes),
 			},
+			MaxItems:      1,
+			ConflictsWith: util.CalculateConflictsWith(dbEngineInfluxDBv2.Name(), dbEngineTypes),
+		},
 
-			dbEngineMongoDB.name: {
-				Type:        typ,
+		dbEngineMongoDB.name: {
+			Type:        typ,
 			Optional:    true,
 			Description: "Connection parameters for the mongodb-database-plugin plugin.",
 			Elem: connectionStringResource(&connectionStringConfig{
@@ -942,7 +942,7 @@ func getDatabaseAPIDataForEngine(engine *dbEngine, idx int, d *schema.ResourceDa
 			}
 			data["hosts"] = strings.Join(hosts, ",")
 		}
-		if v, ok := d.GetOkExists(prefix + "port"); ok {
+		if v, ok := d.GetOk(prefix + "port"); ok {
 			data["port"] = v.(int)
 		}
 		if v, ok := d.GetOk(prefix + "username"); ok {
@@ -951,22 +951,22 @@ func getDatabaseAPIDataForEngine(engine *dbEngine, idx int, d *schema.ResourceDa
 		if v, ok := d.GetOk("cassandra.0.password"); ok {
 			data["password"] = v.(string)
 		}
-		if v, ok := d.GetOkExists(prefix + "tls"); ok {
+		if v, ok := d.GetOk(prefix + "tls"); ok {
 			data["tls"] = v.(bool)
 		}
-		if v, ok := d.GetOkExists("cassandra.0.insecure_tls"); ok {
+		if v, ok := d.GetOk("cassandra.0.insecure_tls"); ok {
 			data["insecure_tls"] = v.(bool)
 		}
-		if v, ok := d.GetOkExists("cassandra.0.pem_bundle"); ok {
+		if v, ok := d.GetOk("cassandra.0.pem_bundle"); ok {
 			data["pem_bundle"] = v.(string)
 		}
-		if v, ok := d.GetOkExists(prefix + "pem_json"); ok {
+		if v, ok := d.GetOk(prefix + "pem_json"); ok {
 			data["pem_json"] = v.(string)
 		}
-		if v, ok := d.GetOkExists(prefix + "protocol_version"); ok {
+		if v, ok := d.GetOk(prefix + "protocol_version"); ok {
 			data["protocol_version"] = v.(int)
 		}
-		if v, ok := d.GetOkExists(prefix + "connect_timeout"); ok {
+		if v, ok := d.GetOk(prefix + "connect_timeout"); ok {
 			data["connect_timeout"] = v.(int)
 		}
 	case dbEngineCouchbase:
@@ -974,7 +974,7 @@ func getDatabaseAPIDataForEngine(engine *dbEngine, idx int, d *schema.ResourceDa
 	case dbEngineInfluxDB:
 		setInfluxDBDatabaseConnectionData(d, prefix, data)
 	case dbEngineInfluxDBv2:
-		setInfluxDBv2DatabaseConnectionData(d, "influxdbv2.0.", data)
+		setInfluxDBv2DatabaseConnectionData(d, prefix, data)
 	case dbEngineHana:
 		setDatabaseConnectionDataWithDisableEscaping(d, prefix, data)
 	case dbEngineMongoDB:
@@ -1339,7 +1339,7 @@ func getInfluxDBConnectionDetailsFromResponse(d *schema.ResourceData, prefix str
 	return result
 }
 
-func getInfluxDBv2ConnectionDetailsFromResponse(d *schema.ResourceData, prefix string, resp *api.Secret) []map[string]interface{} {
+func getInfluxDBv2ConnectionDetailsFromResponse(d *schema.ResourceData, prefix string, resp *api.Secret) map[string]interface{} {
 	details := resp.Data["connection_details"]
 	data, ok := details.(map[string]interface{})
 	if !ok {
@@ -1385,7 +1385,7 @@ func getInfluxDBv2ConnectionDetailsFromResponse(d *schema.ResourceData, prefix s
 		result["username_template"] = v.(string)
 	}
 
-	return []map[string]interface{}{result}
+	return result
 }
 
 func getSnowflakeConnectionDetailsFromResponse(d *schema.ResourceData, prefix string, resp *api.Secret) map[string]interface{} {
@@ -1443,13 +1443,13 @@ func setDatabaseConnectionData(d *schema.ResourceData, prefix string, data map[s
 	if v, ok := d.GetOk(prefix + "max_open_connections"); ok {
 		data["max_open_connections"] = v.(int)
 	}
-	if v, ok := d.GetOkExists(prefix + "max_idle_connections"); ok {
+	if v, ok := d.GetOk(prefix + "max_idle_connections"); ok {
 		data["max_idle_connections"] = v.(int)
 	}
-	if v, ok := d.GetOkExists(prefix + "max_connection_lifetime"); ok {
+	if v, ok := d.GetOk(prefix + "max_connection_lifetime"); ok {
 		data["max_connection_lifetime"] = fmt.Sprintf("%ds", v)
 	}
-	if v, ok := d.GetOkExists(prefix + "username_template"); ok {
+	if v, ok := d.GetOk(prefix + "username_template"); ok {
 		data["username_template"] = v.(string)
 	}
 }
@@ -1560,7 +1560,7 @@ func setElasticsearchDatabaseConnectionData(d *schema.ResourceData, prefix strin
 }
 
 func setCouchbaseDatabaseConnectionData(d *schema.ResourceData, prefix string, data map[string]interface{}) {
-	if v, ok := d.GetOkExists(prefix + "hosts"); ok && v != nil {
+	if v, ok := d.GetOk(prefix + "hosts"); ok && v != nil {
 		var hosts []string
 		for _, host := range v.([]interface{}) {
 			hosts = append(hosts, host.(string))
@@ -1573,10 +1573,10 @@ func setCouchbaseDatabaseConnectionData(d *schema.ResourceData, prefix string, d
 	if v, ok := d.GetOk(prefix + "password"); ok {
 		data["password"] = v
 	}
-	if v, ok := d.GetOkExists(prefix + "tls"); ok {
+	if v, ok := d.GetOk(prefix + "tls"); ok {
 		data["tls"] = v.(bool)
 	}
-	if v, ok := d.GetOkExists(prefix + "insecure_tls"); ok {
+	if v, ok := d.GetOk(prefix + "insecure_tls"); ok {
 		data["insecure_tls"] = v.(bool)
 	}
 	if v, ok := d.GetOk(prefix + "base64_pem"); ok {
@@ -1592,10 +1592,10 @@ func setCouchbaseDatabaseConnectionData(d *schema.ResourceData, prefix string, d
 }
 
 func setInfluxDBDatabaseConnectionData(d *schema.ResourceData, prefix string, data map[string]interface{}) {
-	if v, ok := d.GetOkExists(prefix + "host"); ok {
+	if v, ok := d.GetOk(prefix + "host"); ok {
 		data["host"] = v.(string)
 	}
-	if v, ok := d.GetOkExists(prefix + "port"); ok {
+	if v, ok := d.GetOk(prefix + "port"); ok {
 		data["port"] = v.(int)
 	}
 	if v, ok := d.GetOk(prefix + "username"); ok {
@@ -1604,52 +1604,52 @@ func setInfluxDBDatabaseConnectionData(d *schema.ResourceData, prefix string, da
 	if v, ok := d.GetOk(prefix + "password"); ok {
 		data["password"] = v.(string)
 	}
-	if v, ok := d.GetOkExists(prefix + "tls"); ok {
+	if v, ok := d.GetOk(prefix + "tls"); ok {
 		data["tls"] = v.(bool)
 	}
-	if v, ok := d.GetOkExists(prefix + "insecure_tls"); ok {
+	if v, ok := d.GetOk(prefix + "insecure_tls"); ok {
 		data["insecure_tls"] = v.(bool)
 	}
-	if v, ok := d.GetOkExists(prefix + "pem_bundle"); ok {
+	if v, ok := d.GetOk(prefix + "pem_bundle"); ok {
 		data["pem_bundle"] = v.(string)
 	}
-	if v, ok := d.GetOkExists(prefix + "pem_json"); ok {
+	if v, ok := d.GetOk(prefix + "pem_json"); ok {
 		data["pem_json"] = v.(string)
 	}
-	if v, ok := d.GetOkExists(prefix + "connect_timeout"); ok {
+	if v, ok := d.GetOk(prefix + "connect_timeout"); ok {
 		data["connect_timeout"] = v.(int)
 	}
-	if v, ok := d.GetOkExists(prefix + "username_template"); ok {
+	if v, ok := d.GetOk(prefix + "username_template"); ok {
 		data["username_template"] = v.(int)
 	}
 }
 
 func setInfluxDBv2DatabaseConnectionData(d *schema.ResourceData, prefix string, data map[string]interface{}) {
-	if v, ok := d.GetOkExists(prefix + "host"); ok {
+	if v, ok := d.GetOk(prefix + "host"); ok {
 		data["host"] = v.(string)
 	}
-	if v, ok := d.GetOkExists(prefix + "port"); ok {
+	if v, ok := d.GetOk(prefix + "port"); ok {
 		data["port"] = v.(int)
 	}
 	if v, ok := d.GetOk(prefix + "token"); ok {
 		data["token"] = v.(string)
 	}
-	if v, ok := d.GetOkExists(prefix + "tls"); ok {
+	if v, ok := d.GetOk(prefix + "tls"); ok {
 		data["tls"] = v.(bool)
 	}
-	if v, ok := d.GetOkExists(prefix + "insecure_tls"); ok {
+	if v, ok := d.GetOk(prefix + "insecure_tls"); ok {
 		data["insecure_tls"] = v.(bool)
 	}
-	if v, ok := d.GetOkExists(prefix + "pem_bundle"); ok {
+	if v, ok := d.GetOk(prefix + "pem_bundle"); ok {
 		data["pem_bundle"] = v.(string)
 	}
-	if v, ok := d.GetOkExists(prefix + "pem_json"); ok {
+	if v, ok := d.GetOk(prefix + "pem_json"); ok {
 		data["pem_json"] = v.(string)
 	}
-	if v, ok := d.GetOkExists(prefix + "connect_timeout"); ok {
+	if v, ok := d.GetOk(prefix + "connect_timeout"); ok {
 		data["connect_timeout"] = v.(int)
 	}
-	if v, ok := d.GetOkExists(prefix + "username_template"); ok {
+	if v, ok := d.GetOk(prefix + "username_template"); ok {
 		data["username_template"] = v.(int)
 	}
 }
@@ -1713,11 +1713,11 @@ func writeDatabaseSecretConfig(d *schema.ResourceData, client *api.Client,
 		prefix = engine.ResourcePrefix(idx)
 	}
 
-	if v, ok := d.GetOkExists(prefix + "verify_connection"); ok {
+	if v, ok := d.GetOk(prefix + "verify_connection"); ok {
 		data["verify_connection"] = v.(bool)
 	}
 
-	if v, ok := d.GetOkExists(prefix + "allowed_roles"); ok {
+	if v, ok := d.GetOk(prefix + "allowed_roles"); ok {
 		var roles []string
 		for _, role := range v.([]interface{}) {
 			roles = append(roles, role.(string))
@@ -1729,7 +1729,7 @@ func writeDatabaseSecretConfig(d *schema.ResourceData, client *api.Client,
 		data["root_rotation_statements"] = v
 	}
 
-	if m, ok := d.GetOkExists(prefix + "data"); ok {
+	if m, ok := d.GetOk(prefix + "data"); ok {
 		for k, v := range m.(map[string]interface{}) {
 			// Vault does not return the password in the API. If the root credentials have been rotated, sending
 			// the old password in the update request would break the connection config. Thus we only send it,
@@ -1896,6 +1896,8 @@ func getDBConnectionConfig(d *schema.ResourceData, engine *dbEngine, idx int,
 		result = getCouchbaseConnectionDetailsFromResponse(d, prefix, resp)
 	case dbEngineInfluxDB:
 		result = getInfluxDBConnectionDetailsFromResponse(d, prefix, resp)
+	case dbEngineInfluxDBv2:
+		result = getInfluxDBv2ConnectionDetailsFromResponse(d, prefix, resp)
 	case dbEngineHana:
 		result = getConnectionDetailsFromResponseWithDisableEscaping(d, prefix, resp)
 	case dbEngineMongoDB:
