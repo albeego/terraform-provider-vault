@@ -37,6 +37,8 @@ func readCaCert(d *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("[DEBUG] Reading %s from Vault", path)
 
+	d.SetId(path)
+
 	r := client.NewRequest("GET", "/v1/"+path)
 	resp, err := client.RawRequest(r)
 	if resp != nil {
@@ -47,6 +49,7 @@ func readCaCert(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("error reading from Vault: %s", err)
 	}
 	d.Set("pem", string(body))
+	log.Printf("[DEBUG] PEM set as %s from Vault", d.Get("pem").(string))
 
 	return nil
 }
