@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -220,9 +219,6 @@ func NewProviderMeta(d *schema.ResourceData) (interface{}, error) {
 
 	if token != "" {
 		client.SetToken(token)
-	}
-	if client.Token() == "" {
-		return nil, errors.New("no vault token found")
 	}
 
 	skipChildToken := d.Get("skip_child_token").(bool)
