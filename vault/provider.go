@@ -617,6 +617,10 @@ var (
 			Resource:      sysInitResource(),
 			PathInventory: []string{"/sys/init"},
 		},
+		"vault_sys_plugin": {
+			Resource:      sysPluginResource(),
+			PathInventory: []string{"/sys/plugin"},
+		},
 		"vault_sys_unseal": {
 			Resource:      sysUnsealResource(),
 			PathInventory: []string{"/sys/unseal"},
