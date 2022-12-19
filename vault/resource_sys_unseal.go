@@ -3,10 +3,10 @@ package vault
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-provider-vault/internal/provider"
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/vault/api"
 )
 
 func sysUnsealResource() *schema.Resource {
@@ -69,7 +69,10 @@ func sysUnsealResource() *schema.Resource {
 }
 
 func sysUnsealWrite(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*api.Client)
+	client, e := provider.GetClient(d, meta)
+	if e != nil {
+		return e
+	}
 
 	ikeys := d.Get("keys").([]interface{})
 	keys := make([]string, 0, len(ikeys))

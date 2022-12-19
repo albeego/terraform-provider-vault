@@ -3,6 +3,7 @@ package vault
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-provider-vault/internal/provider"
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -135,7 +136,10 @@ func sysInitResource() *schema.Resource {
 }
 
 func sysInitWrite(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*api.Client)
+	client, e := provider.GetClient(d, meta)
+	if e != nil {
+		return e
+	}
 
 	secretShares := d.Get("secret_shares").(int)
 	secretThreshold := d.Get("secret_threshold").(int)
