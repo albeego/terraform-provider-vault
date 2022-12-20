@@ -23,30 +23,13 @@ func sysPluginResource() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				ForceNew:    true,
+				Optional:    false,
 				Description: "The name of the plugin to register",
 			},
 			"type": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"auth": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"database": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"secret": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-					},
-				},
+				Type:        schema.TypeString,
+				Optional:    false,
+				Description: "Specifies the type of this plugin. May be \"auth\", \"database\", or \"secret\"",
 			},
 			"sha256value": {
 				Type:        schema.TypeString,
