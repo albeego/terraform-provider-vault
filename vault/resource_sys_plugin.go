@@ -76,6 +76,30 @@ func sysPluginWrite(d *schema.ResourceData, meta interface{}) error {
 }
 
 func sysPluginDelete(d *schema.ResourceData, meta interface{}) error {
+	client, e := provider.GetClient(d, meta)
+	if e != nil {
+		return e
+	}
+
+	log.Printf("[DEBUG] Deregistering plugin")
+
+	name := d.Get("name").(string)
+	pluginType, e := consts.ParsePluginType(d.Get("type").(string))
+	if e != nil {
+		return e
+	}
+
+	deregisterPluginInput := api.DeregisterPluginInput{
+		Name: name,
+		Type: pluginType,
+	}
+	e = client.Sys().DeregisterPlugin(&deregisterPluginInput)
+	if e != nil {
+		return e
+	}
+
+	d.SetId(uuid.New().String())
+
 	return nil
 }
 
