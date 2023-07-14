@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -89,7 +92,7 @@ var (
 
 func identityEntityDataSource() *schema.Resource {
 	return &schema.Resource{
-		Read: ReadWrapper(identityEntityDataSourceRead),
+		Read: provider.ReadWrapper(identityEntityDataSourceRead),
 
 		Schema: map[string]*schema.Schema{
 			"entity_name": {

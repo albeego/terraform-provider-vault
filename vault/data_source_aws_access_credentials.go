@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -40,7 +43,7 @@ const (
 
 func awsAccessCredentialsDataSource() *schema.Resource {
 	return &schema.Resource{
-		Read: ReadWrapper(awsAccessCredentialsDataSourceRead),
+		Read: provider.ReadWrapper(awsAccessCredentialsDataSourceRead),
 
 		Schema: map[string]*schema.Schema{
 			"backend": {
@@ -94,6 +97,7 @@ func awsAccessCredentialsDataSource() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "AWS security token read from Vault. (Only returned if type is 'sts').",
+				Sensitive:   true,
 			},
 
 			consts.FieldLeaseID: {

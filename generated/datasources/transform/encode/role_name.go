@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package encode
 
 // DO NOT EDIT
@@ -12,14 +15,13 @@ import (
 
 	"github.com/hashicorp/terraform-provider-vault/internal/provider"
 	"github.com/hashicorp/terraform-provider-vault/util"
-	"github.com/hashicorp/terraform-provider-vault/vault"
 )
 
 const roleNameEndpoint = "/transform/encode/{role_name}"
 
 func RoleNameDataSource() *schema.Resource {
 	return &schema.Resource{
-		Read: vault.ReadWrapper(readRoleNameResource),
+		Read: provider.ReadWrapper(readRoleNameResource),
 		Schema: map[string]*schema.Schema{
 			"path": {
 				Type:        schema.TypeString,

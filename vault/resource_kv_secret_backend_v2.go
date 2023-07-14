@@ -1,8 +1,12 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
 	"context"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -17,7 +21,7 @@ func kvSecretBackendV2Resource() *schema.Resource {
 		CreateContext: kvSecretBackendV2CreateUpdate,
 		UpdateContext: kvSecretBackendV2CreateUpdate,
 		DeleteContext: kvSecretBackendV2Delete,
-		ReadContext:   ReadContextWrapper(kvSecretBackendV2Read),
+		ReadContext:   provider.ReadContextWrapper(kvSecretBackendV2Read),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -101,6 +105,13 @@ func kvSecretBackendV2Read(_ context.Context, d *schema.ResourceData, meta inter
 	configFields := []string{"max_versions", "cas_required"}
 	for _, k := range configFields {
 		if err := d.Set(k, config.Data[k]); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if _, ok := d.GetOk(consts.FieldMount); !ok {
+		// ensure that mount is set on import
+		if err := d.Set(consts.FieldMount, strings.TrimRight(path, "/config")); err != nil {
 			return diag.FromErr(err)
 		}
 	}

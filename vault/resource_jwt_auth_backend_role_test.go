@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -13,6 +16,7 @@ import (
 )
 
 func TestAccJWTAuthBackendRole_import(t *testing.T) {
+	t.Parallel()
 	testutil.SkipTestEnvSet(t, testutil.EnvVarSkipVaultNext)
 
 	backend := acctest.RandomWithPrefix("jwt")
@@ -86,6 +90,7 @@ func TestAccJWTAuthBackendRole_import(t *testing.T) {
 }
 
 func TestAccJWTAuthBackendRole_basic(t *testing.T) {
+	t.Parallel()
 	testutil.SkipTestEnvSet(t, testutil.EnvVarSkipVaultNext)
 
 	backend := acctest.RandomWithPrefix("jwt")
@@ -131,6 +136,7 @@ func TestAccJWTAuthBackendRole_basic(t *testing.T) {
 }
 
 func TestAccJWTAuthBackendRole_update(t *testing.T) {
+	t.Parallel()
 	backend := acctest.RandomWithPrefix("jwt")
 	role := acctest.RandomWithPrefix("test-role")
 
@@ -204,6 +210,7 @@ func TestAccJWTAuthBackendRole_update(t *testing.T) {
 }
 
 func TestAccJWTAuthBackendRole_full(t *testing.T) {
+	t.Parallel()
 	testutil.SkipTestEnvSet(t, testutil.EnvVarSkipVaultNext)
 
 	backend := acctest.RandomWithPrefix("jwt")
@@ -269,6 +276,7 @@ func TestAccJWTAuthBackendRole_full(t *testing.T) {
 }
 
 func TestAccJWTAuthBackendRoleOIDC_full(t *testing.T) {
+	t.Parallel()
 	testutil.SkipTestEnvSet(t, testutil.EnvVarSkipVaultNext)
 
 	backend := acctest.RandomWithPrefix("oidc")
@@ -344,6 +352,7 @@ func TestAccJWTAuthBackendRoleOIDC_full(t *testing.T) {
 }
 
 func TestAccJWTAuthBackendRoleOIDC_disableParsing(t *testing.T) {
+	t.Parallel()
 	backend := acctest.RandomWithPrefix("jwt")
 	role := acctest.RandomWithPrefix("test-role")
 
@@ -378,6 +387,7 @@ func TestAccJWTAuthBackendRoleOIDC_disableParsing(t *testing.T) {
 }
 
 func TestAccJWTAuthBackendRole_fullUpdate(t *testing.T) {
+	t.Parallel()
 	testutil.SkipTestEnvSet(t, testutil.EnvVarSkipVaultNext)
 
 	backend := acctest.RandomWithPrefix("jwt")

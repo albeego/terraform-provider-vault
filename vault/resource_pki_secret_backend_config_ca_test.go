@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -25,7 +28,7 @@ func TestPkiSecretBackendConfigCA_basic(t *testing.T) {
 			{
 				Config: testPkiSecretBackendConfigCAConfig_basic(path),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "backend", path),
+					resource.TestCheckResourceAttr(resourceName, consts.FieldBackend, path),
 				),
 			},
 		},

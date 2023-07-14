@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -16,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/vault/api"
 
+	"github.com/hashicorp/terraform-provider-vault/internal/consts"
 	"github.com/hashicorp/terraform-provider-vault/internal/provider"
 	"github.com/hashicorp/terraform-provider-vault/util"
 )
@@ -769,7 +773,7 @@ func databaseSecretBackendConnectionResource() *schema.Resource {
 
 	return &schema.Resource{
 		Create: databaseSecretBackendConnectionCreateOrUpdate,
-		Read:   ReadWrapper(databaseSecretBackendConnectionRead),
+		Read:   provider.ReadWrapper(databaseSecretBackendConnectionRead),
 		Update: databaseSecretBackendConnectionCreateOrUpdate,
 		Delete: databaseSecretBackendConnectionDelete,
 		Exists: databaseSecretBackendConnectionExists,
@@ -931,44 +935,7 @@ func getDatabaseAPIDataForEngine(engine *dbEngine, idx int, d *schema.ResourceDa
 
 	switch engine {
 	case dbEngineCassandra:
-		if v, ok := d.GetOk(prefix + "hosts"); ok {
-			log.Printf("[DEBUG] Cassandra hosts: %v", v.([]interface{}))
-			var hosts []string
-			for _, host := range v.([]interface{}) {
-				if v == nil {
-					continue
-				}
-				hosts = append(hosts, host.(string))
-			}
-			data["hosts"] = strings.Join(hosts, ",")
-		}
-		if v, ok := d.GetOk(prefix + "port"); ok {
-			data["port"] = v.(int)
-		}
-		if v, ok := d.GetOk(prefix + "username"); ok {
-			data["username"] = v.(string)
-		}
-		if v, ok := d.GetOk("cassandra.0.password"); ok {
-			data["password"] = v.(string)
-		}
-		if v, ok := d.GetOk(prefix + "tls"); ok {
-			data["tls"] = v.(bool)
-		}
-		if v, ok := d.GetOk("cassandra.0.insecure_tls"); ok {
-			data["insecure_tls"] = v.(bool)
-		}
-		if v, ok := d.GetOk("cassandra.0.pem_bundle"); ok {
-			data["pem_bundle"] = v.(string)
-		}
-		if v, ok := d.GetOk(prefix + "pem_json"); ok {
-			data["pem_json"] = v.(string)
-		}
-		if v, ok := d.GetOk(prefix + "protocol_version"); ok {
-			data["protocol_version"] = v.(int)
-		}
-		if v, ok := d.GetOk(prefix + "connect_timeout"); ok {
-			data["connect_timeout"] = v.(int)
-		}
+		setCassandraDatabaseConnectionData(d, prefix, data)
 	case dbEngineCouchbase:
 		setCouchbaseDatabaseConnectionData(d, prefix, data)
 	case dbEngineInfluxDB:
@@ -980,15 +947,7 @@ func getDatabaseAPIDataForEngine(engine *dbEngine, idx int, d *schema.ResourceDa
 	case dbEngineMongoDB:
 		setDatabaseConnectionDataWithUserPass(d, prefix, data)
 	case dbEngineMongoDBAtlas:
-		if v, ok := d.GetOk(prefix + "public_key"); ok {
-			data["public_key"] = v.(string)
-		}
-		if v, ok := d.GetOk(prefix + "private_key"); ok {
-			data["private_key"] = v.(string)
-		}
-		if v, ok := d.GetOk(prefix + "project_id"); ok {
-			data["project_id"] = v.(string)
-		}
+		setMongoDBAtlasDatabaseConnectionData(d, prefix, data)
 	case dbEngineMSSQL:
 		setMSSQLDatabaseConnectionData(d, prefix, data)
 	case dbEngineMySQL:
@@ -1018,6 +977,66 @@ func getDatabaseAPIDataForEngine(engine *dbEngine, idx int, d *schema.ResourceDa
 	}
 
 	return data, nil
+}
+
+func setMongoDBAtlasDatabaseConnectionData(d *schema.ResourceData, prefix string, data map[string]interface{}) {
+	if v, ok := d.GetOk(prefix + "public_key"); ok {
+		data["public_key"] = v.(string)
+	}
+	if v, ok := d.GetOk(prefix + "private_key"); ok {
+		data["private_key"] = v.(string)
+	}
+	if v, ok := d.GetOk(prefix + "project_id"); ok {
+		data["project_id"] = v.(string)
+	}
+}
+
+func setCassandraDatabaseConnectionData(d *schema.ResourceData, prefix string, data map[string]interface{}) {
+	if v, ok := d.GetOk(prefix + "hosts"); ok {
+		log.Printf("[DEBUG] Cassandra hosts: %v", v.([]interface{}))
+		var hosts []string
+		for _, host := range v.([]interface{}) {
+			if v == nil {
+				continue
+			}
+			hosts = append(hosts, host.(string))
+		}
+		data["hosts"] = strings.Join(hosts, ",")
+	}
+	if v, ok := d.GetOkExists(prefix + "port"); ok {
+		data["port"] = v.(int)
+	}
+	if v, ok := d.GetOk(prefix + "username"); ok {
+		data["username"] = v.(string)
+	}
+
+	passwordKey := prefix + consts.FieldPassword
+	fmt.Println("passworkKey", passwordKey)
+	if v, ok := d.GetOk(passwordKey); ok {
+		if d.IsNewResource() || d.HasChange(passwordKey) {
+			fmt.Println("password updated", v.(string))
+			data[consts.FieldPassword] = v.(string)
+		}
+	}
+
+	if v, ok := d.GetOkExists(prefix + "tls"); ok {
+		data["tls"] = v.(bool)
+	}
+	if v, ok := d.GetOkExists("cassandra.0.insecure_tls"); ok {
+		data["insecure_tls"] = v.(bool)
+	}
+	if v, ok := d.GetOkExists("cassandra.0.pem_bundle"); ok {
+		data["pem_bundle"] = v.(string)
+	}
+	if v, ok := d.GetOkExists(prefix + "pem_json"); ok {
+		data["pem_json"] = v.(string)
+	}
+	if v, ok := d.GetOkExists(prefix + "protocol_version"); ok {
+		data["protocol_version"] = v.(int)
+	}
+	if v, ok := d.GetOkExists(prefix + "connect_timeout"); ok {
+		data["connect_timeout"] = v.(int)
+	}
 }
 
 func getConnectionDetailsFromResponse(d *schema.ResourceData, prefix string, resp *api.Secret) map[string]interface{} {
@@ -1429,6 +1448,7 @@ func getConnectionDetailsFromResponseWithUserPass(d *schema.ResourceData, prefix
 	if v, ok := details["username"]; ok {
 		result["username"] = v.(string)
 	}
+
 	if v, ok := d.GetOk(prefix + "password"); ok {
 		result["password"] = v.(string)
 	}
@@ -1485,9 +1505,14 @@ func setRedisDatabaseConnectionData(d *schema.ResourceData, prefix string, data 
 	if v, ok := d.GetOk(prefix + "username"); ok {
 		data["username"] = v.(string)
 	}
-	if v, ok := d.GetOk(prefix + "password"); ok {
-		data["password"] = v.(string)
+
+	passwordKey := prefix + consts.FieldPassword
+	if v, ok := d.GetOk(passwordKey); ok {
+		if d.IsNewResource() || d.HasChange(passwordKey) {
+			data[consts.FieldPassword] = v.(string)
+		}
 	}
+
 	if v, ok := d.GetOk(prefix + "tls"); ok {
 		data["tls"] = v.(bool)
 	}
@@ -1526,8 +1551,11 @@ func setElasticsearchDatabaseConnectionData(d *schema.ResourceData, prefix strin
 		data["username"] = v.(string)
 	}
 
-	if v, ok := d.GetOk(prefix + "password"); ok {
-		data["password"] = v.(string)
+	passwordKey := prefix + consts.FieldPassword
+	if v, ok := d.GetOk(passwordKey); ok {
+		if d.IsNewResource() || d.HasChange(passwordKey) {
+			data[consts.FieldPassword] = v.(string)
+		}
 	}
 
 	if v, ok := d.GetOk(prefix + "ca_cert"); ok {
@@ -1570,9 +1598,14 @@ func setCouchbaseDatabaseConnectionData(d *schema.ResourceData, prefix string, d
 	if v, ok := d.GetOk(prefix + "username"); ok {
 		data["username"] = v
 	}
-	if v, ok := d.GetOk(prefix + "password"); ok {
-		data["password"] = v
+
+	passwordKey := prefix + consts.FieldPassword
+	if v, ok := d.GetOk(passwordKey); ok {
+		if d.IsNewResource() || d.HasChange(passwordKey) {
+			data[consts.FieldPassword] = v.(string)
+		}
 	}
+
 	if v, ok := d.GetOk(prefix + "tls"); ok {
 		data["tls"] = v.(bool)
 	}
@@ -1601,9 +1634,14 @@ func setInfluxDBDatabaseConnectionData(d *schema.ResourceData, prefix string, da
 	if v, ok := d.GetOk(prefix + "username"); ok {
 		data["username"] = v.(string)
 	}
-	if v, ok := d.GetOk(prefix + "password"); ok {
-		data["password"] = v.(string)
+
+	passwordKey := prefix + consts.FieldPassword
+	if v, ok := d.GetOk(passwordKey); ok {
+		if d.IsNewResource() || d.HasChange(passwordKey) {
+			data[consts.FieldPassword] = v.(string)
+		}
 	}
+
 	if v, ok := d.GetOk(prefix + "tls"); ok {
 		data["tls"] = v.(bool)
 	}
@@ -1656,20 +1694,24 @@ func setInfluxDBv2DatabaseConnectionData(d *schema.ResourceData, prefix string, 
 
 func setDatabaseConnectionDataWithUserPass(d *schema.ResourceData, prefix string, data map[string]interface{}) {
 	setDatabaseConnectionData(d, prefix, data)
-	if v, ok := d.GetOk(prefix + "username"); ok {
-		data["username"] = v.(string)
-	}
-	if v, ok := d.GetOk(prefix + "password"); ok {
-		data["password"] = v.(string)
+
+	data["username"] = d.Get(prefix + "username")
+
+	// Vault does not return the password in the API. If the root credentials have been rotated, sending
+	// the old password in the update request would break the connection config. Thus we only send it,
+	// if it actually changed to still support updating it for non-rotated cases.
+	passwordKey := prefix + consts.FieldPassword
+	if v, ok := d.GetOk(passwordKey); ok {
+		if d.IsNewResource() || d.HasChange(passwordKey) {
+			data[consts.FieldPassword] = v.(string)
+		}
 	}
 }
 
 func setDatabaseConnectionDataWithDisableEscaping(d *schema.ResourceData, prefix string, data map[string]interface{}) {
 	setDatabaseConnectionDataWithUserPass(d, prefix, data)
 
-	if v, ok := d.GetOk(prefix + "disable_escaping"); ok {
-		data["disable_escaping"] = v.(bool)
-	}
+	data["disable_escaping"] = d.Get(prefix + "disable_escaping")
 }
 
 func databaseSecretBackendConnectionCreateOrUpdate(

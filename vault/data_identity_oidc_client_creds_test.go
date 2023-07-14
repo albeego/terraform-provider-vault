@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -11,6 +14,7 @@ import (
 )
 
 func TestDataSourceIdentityOIDCClientCreds(t *testing.T) {
+	t.Parallel()
 	name := acctest.RandomWithPrefix("test-client")
 
 	resource.Test(t, resource.TestCase{

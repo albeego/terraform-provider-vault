@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -20,7 +23,7 @@ var (
 func databaseSecretBackendStaticRoleResource() *schema.Resource {
 	return &schema.Resource{
 		Create: databaseSecretBackendStaticRoleWrite,
-		Read:   ReadWrapper(databaseSecretBackendStaticRoleRead),
+		Read:   provider.ReadWrapper(databaseSecretBackendStaticRoleRead),
 		Update: databaseSecretBackendStaticRoleWrite,
 		Delete: databaseSecretBackendStaticRoleDelete,
 		Exists: databaseSecretBackendStaticRoleExists,

@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -12,7 +15,7 @@ import (
 
 func kubernetesAuthBackendConfigDataSource() *schema.Resource {
 	return &schema.Resource{
-		Read: ReadWrapper(kubernetesAuthBackendConfigDataSourceRead),
+		Read: provider.ReadWrapper(kubernetesAuthBackendConfigDataSourceRead),
 		Schema: map[string]*schema.Schema{
 			"backend": {
 				Type:        schema.TypeString,

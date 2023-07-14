@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -18,7 +21,7 @@ func quotaLeaseCountPath(name string) string {
 func quotaLeaseCountResource() *schema.Resource {
 	return &schema.Resource{
 		Create: quotaLeaseCountCreate,
-		Read:   ReadWrapper(quotaLeaseCountRead),
+		Read:   provider.ReadWrapper(quotaLeaseCountRead),
 		Update: quotaLeaseCountUpdate,
 		Delete: quotaLeaseCountDelete,
 		Exists: quotaLeaseCountExists,

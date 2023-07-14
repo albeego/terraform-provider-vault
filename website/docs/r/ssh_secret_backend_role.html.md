@@ -62,6 +62,9 @@ The following arguments are supported:
 
 * `allowed_critical_options` - (Optional) Specifies a comma-separated list of critical options that certificates can have when signed.
 
+* `allowed_domains_template` - (Optional) Specifies if `allowed_domains` can be declared using
+  identity template policies. Non-templated domains are also permitted.
+
 * `allowed_domains` - (Optional) The list of domains for which a client can request a host certificate.
 
 * `cidr_list` - (Optional) The comma-separated string of CIDR blocks for which this role is applicable.
@@ -75,6 +78,8 @@ The following arguments are supported:
 * `allowed_users_template` - (Optional) Specifies if `allowed_users` can be declared using identity template policies. Non-templated users are also permitted.
 
 * `allowed_users` - (Optional) Specifies a comma-separated list of usernames that are to be allowed, only if certain usernames are to be allowed.
+
+* `default_user_template` - (Optional) If set, `default_users` can be specified using identity template values. A non-templated user is also permitted.
 
 * `default_user` - (Optional) Specifies the default username for which a credential will be generated.
 

@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -15,6 +18,7 @@ import (
 )
 
 func TestLDAPAuthBackendUser_basic(t *testing.T) {
+	t.Parallel()
 	backend := acctest.RandomWithPrefix("tf-test-ldap-backend")
 	username := acctest.RandomWithPrefix("tf-test-ldap-user")
 
@@ -50,6 +54,7 @@ func TestLDAPAuthBackendUser_basic(t *testing.T) {
 }
 
 func TestLDAPAuthBackendUser_noGroups(t *testing.T) {
+	t.Parallel()
 	backend := acctest.RandomWithPrefix("tf-test-ldap-backend")
 	username := acctest.RandomWithPrefix("tf-test-ldap-user")
 
@@ -78,6 +83,7 @@ func TestLDAPAuthBackendUser_noGroups(t *testing.T) {
 }
 
 func TestLDAPAuthBackendUser_oneGroup(t *testing.T) {
+	t.Parallel()
 	backend := acctest.RandomWithPrefix("tf-test-ldap-backend")
 	username := acctest.RandomWithPrefix("tf-test-ldap-user")
 

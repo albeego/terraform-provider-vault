@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -18,7 +21,7 @@ func identityGroupResource() *schema.Resource {
 	return &schema.Resource{
 		Create: identityGroupCreate,
 		Update: identityGroupUpdate,
-		Read:   ReadWrapper(identityGroupRead),
+		Read:   provider.ReadWrapper(identityGroupRead),
 		Delete: identityGroupDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,

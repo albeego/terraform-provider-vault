@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -6,6 +9,7 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -325,7 +329,9 @@ func TestReadEntity(t *testing.T) {
 				path = tt.name
 			}
 
-			actualResp, err := entity.ReadEntity(c, path, true)
+			actualResp, err := entity.ReadEntity(c, path, true,
+				entity.WithMinRetryWait(time.Nanosecond),
+				entity.WithMaxRetryWait(time.Nanosecond))
 
 			if tt.wantError != nil {
 				if err == nil {

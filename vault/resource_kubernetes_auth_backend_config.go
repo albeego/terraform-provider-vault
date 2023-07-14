@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -16,7 +19,7 @@ var kubernetesAuthBackendConfigFromPathRegex = regexp.MustCompile("^auth/(.+)/co
 func kubernetesAuthBackendConfigResource() *schema.Resource {
 	return &schema.Resource{
 		Create: kubernetesAuthBackendConfigCreate,
-		Read:   ReadWrapper(kubernetesAuthBackendConfigRead),
+		Read:   provider.ReadWrapper(kubernetesAuthBackendConfigRead),
 		Update: kubernetesAuthBackendConfigUpdate,
 		Delete: kubernetesAuthBackendConfigDelete,
 		Exists: kubernetesAuthBackendConfigExists,

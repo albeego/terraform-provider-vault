@@ -12,7 +12,7 @@ build: fmtcheck
 	go install
 
 test: fmtcheck
-	TF_ACC= go test $(TESTARGS) -timeout 10m -parallel=4 $(TEST_PATH)
+	TF_ACC= go test $(TESTARGS) -timeout 10m $(TEST_PATH)
 
 testacc: fmtcheck
 	TF_ACC=1 go test $(TESTARGS) -timeout 30m $(TEST_PATH)
@@ -22,6 +22,10 @@ testacc-ent:
 
 dev: fmtcheck
 	go build -o terraform-provider-vault
+	mv terraform-provider-vault ~/.terraform.d/plugins/
+
+debug: fmtcheck
+	go build -gcflags "all=-N -l" -o terraform-provider-vault
 	mv terraform-provider-vault ~/.terraform.d/plugins/
 
 generate:

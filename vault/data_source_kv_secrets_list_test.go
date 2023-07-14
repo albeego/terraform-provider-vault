@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -12,6 +15,7 @@ import (
 )
 
 func TestDataSourceKVSecretList(t *testing.T) {
+	t.Parallel()
 	mount := acctest.RandomWithPrefix("tf-kv")
 	s1 := acctest.RandomWithPrefix("foo")
 	s2 := acctest.RandomWithPrefix("bar")

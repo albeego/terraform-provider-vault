@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -17,6 +20,7 @@ import (
 func TestDataSourceIdentityOIDCOpenIDConfig(t *testing.T) {
 	testutil.SkipTestAcc(t)
 	testutil.TestAccPreCheck(t)
+	t.Parallel()
 
 	providerName := acctest.RandomWithPrefix("test-provider")
 	keyName := acctest.RandomWithPrefix("test-key")

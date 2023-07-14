@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -23,7 +26,7 @@ var (
 func transitSecretBackendKeyResource() *schema.Resource {
 	return &schema.Resource{
 		Create: transitSecretBackendKeyCreate,
-		Read:   ReadWrapper(transitSecretBackendKeyRead),
+		Read:   provider.ReadWrapper(transitSecretBackendKeyRead),
 		Update: transitSecretBackendKeyUpdate,
 		Delete: transitSecretBackendKeyDelete,
 		Exists: transitSecretBackendKeyExists,

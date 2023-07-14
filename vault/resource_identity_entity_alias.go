@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -20,7 +23,7 @@ func identityEntityAliasResource() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: identityEntityAliasCreate,
 		UpdateContext: identityEntityAliasUpdate,
-		ReadContext:   ReadContextWrapper(identityEntityAliasRead),
+		ReadContext:   provider.ReadContextWrapper(identityEntityAliasRead),
 		DeleteContext: identityEntityAliasDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,

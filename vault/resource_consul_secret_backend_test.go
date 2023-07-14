@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -23,6 +26,7 @@ type testMountStore struct {
 }
 
 func TestConsulSecretBackend(t *testing.T) {
+	t.Parallel()
 	path := acctest.RandomWithPrefix("tf-test-consul")
 	resourceType := "vault_consul_secret_backend"
 	resourceName := resourceType + ".test"
@@ -128,6 +132,7 @@ func TestConsulSecretBackend(t *testing.T) {
 }
 
 func TestConsulSecretBackend_Bootstrap(t *testing.T) {
+	t.Parallel()
 	testutil.SkipTestAcc(t)
 
 	path := acctest.RandomWithPrefix("tf-test-consul")
@@ -197,6 +202,7 @@ func TestConsulSecretBackend_Bootstrap(t *testing.T) {
 }
 
 func TestConsulSecretBackend_remount(t *testing.T) {
+	t.Parallel()
 	path := acctest.RandomWithPrefix("tf-test-consul")
 	updatedPath := acctest.RandomWithPrefix("tf-test-consul-updated")
 	token := "026a0c16-87cd-4c2d-b3f3-fb539f592b7e"

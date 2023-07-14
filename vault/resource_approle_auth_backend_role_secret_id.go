@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -19,7 +22,7 @@ var approleAuthBackendRoleSecretIDIDRegex = regexp.MustCompile("^backend=(.+)::r
 func approleAuthBackendRoleSecretIDResource(name string) *schema.Resource {
 	return &schema.Resource{
 		Create: approleAuthBackendRoleSecretIDCreate,
-		Read:   ReadWrapper(approleAuthBackendRoleSecretIDRead),
+		Read:   provider.ReadWrapper(approleAuthBackendRoleSecretIDRead),
 		Delete: approleAuthBackendRoleSecretIDDelete,
 		Exists: approleAuthBackendRoleSecretIDExists,
 

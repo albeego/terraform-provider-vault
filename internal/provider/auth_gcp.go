@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package provider
 
 import (
@@ -21,6 +24,17 @@ import (
 
 	"github.com/hashicorp/terraform-provider-vault/internal/consts"
 )
+
+func init() {
+	field := consts.FieldAuthLoginGCP
+	if err := globalAuthLoginRegistry.Register(field,
+		func(r *schema.ResourceData) (AuthLogin, error) {
+			a := &AuthLoginGCP{}
+			return a.Init(r, field)
+		}, GetGCPLoginSchema); err != nil {
+		panic(err)
+	}
+}
 
 // GetGCPLoginSchema for the gcp authentication engine.
 func GetGCPLoginSchema(authField string) *schema.Schema {
@@ -65,11 +79,20 @@ func GetGCPLoginSchemaResource(authField string) *schema.Resource {
 	}, consts.MountTypeGCP)
 }
 
+var _ AuthLogin = (*AuthLoginGCP)(nil)
+
 // AuthLoginGCP provides an interface for authenticating to the
 // gcp authentication engine.
 // Requires configuration provided by SchemaLoginGCP.
 type AuthLoginGCP struct {
 	AuthLoginCommon
+}
+
+func (l *AuthLoginGCP) Init(d *schema.ResourceData, authField string) (AuthLogin, error) {
+	if err := l.AuthLoginCommon.Init(d, authField); err != nil {
+		return nil, err
+	}
+	return l, nil
 }
 
 // MountPath for the cert authentication engine.

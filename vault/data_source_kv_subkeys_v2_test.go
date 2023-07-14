@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -12,6 +15,7 @@ import (
 )
 
 func TestDataSourceKVSubkeys(t *testing.T) {
+	t.Parallel()
 	resourceName := "data.vault_kv_secret_subkeys_v2.test"
 	mount := acctest.RandomWithPrefix("tf-kvv2")
 	secretPath := acctest.RandomWithPrefix("foo")

@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package entity
 
 import (
@@ -8,6 +11,7 @@ import (
 	"reflect"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/vault/api"
 
@@ -256,13 +260,17 @@ func TestFindAliases(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := tt.findHandler
 
 			config, ln := testutil.TestHTTPServer(t, r.handler())
 			defer ln.Close()
 
 			config.Address = fmt.Sprintf("http://%s", ln.Addr())
+			config.MinRetryWait = time.Nanosecond
+			config.MaxRetryWait = time.Nanosecond
 			c, err := api.NewClient(config)
 			if err != nil {
 				t.Fatal(err)
@@ -373,6 +381,11 @@ func TestLookupEntityAlias(t *testing.T) {
 		MountAccessor: "CC417368-0C63-407A-93AD-2D76A72F58E3",
 	}
 
+	aliasAliceOther := &Alias{
+		Name:          "alice",
+		MountAccessor: "CC417368-0C63-407A-93AD-2D76A72F58E4",
+	}
+
 	defaultEntities := []*Entity{
 		{
 			ID: "C6D3410E-86AF-4A10-9282-4B1E9773932A",
@@ -384,6 +397,12 @@ func TestLookupEntityAlias(t *testing.T) {
 			ID: "C6D3410E-86AF-4A10-9282-4B1E9773932B",
 			Aliases: []*Alias{
 				aliasAlice,
+			},
+		},
+		{
+			ID: "C6D3410E-86AF-4A10-9282-4B1E9773932C",
+			Aliases: []*Alias{
+				aliasAliceOther,
 			},
 		},
 	}
@@ -408,6 +427,18 @@ func TestLookupEntityAlias(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "alice-other",
+			params: &FindAliasParams{
+				Name:          aliasAliceOther.Name,
+				MountAccessor: aliasAliceOther.MountAccessor,
+			},
+			findHandler: &testLookupEntityAliasHandler{
+				entities: defaultEntities,
+			},
+			want:    aliasAliceOther,
+			wantErr: false,
+		},
+		{
 			name: "bob",
 			params: &FindAliasParams{
 				Name:          aliasBob.Name,
@@ -423,7 +454,7 @@ func TestLookupEntityAlias(t *testing.T) {
 			name: "none",
 			params: &FindAliasParams{
 				Name:          "other",
-				MountAccessor: "other_accesor",
+				MountAccessor: "other_accessor",
 			},
 			findHandler: &testLookupEntityAliasHandler{
 				entities: defaultEntities,
@@ -481,11 +512,11 @@ func TestLookupEntityAlias(t *testing.T) {
 
 			got, err := LookupEntityAlias(c, tt.params)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("LookupEntityAlias() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("LookupEntityAlias() error = %#v, wantErr %#v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("LookupEntityAlias() got = %v, want %v", got, tt.want)
+				t.Errorf("LookupEntityAlias() got = %#v, want %#v", got, tt.want)
 			}
 		})
 	}

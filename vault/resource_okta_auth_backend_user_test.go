@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -15,6 +18,7 @@ import (
 
 // This is light on testing as most of the code is covered by `resource_okta_auth_backend_test.go`
 func TestAccOktaAuthBackendUser(t *testing.T) {
+	t.Parallel()
 	path := "okta-" + strconv.Itoa(acctest.RandInt())
 	organization := "dummy"
 

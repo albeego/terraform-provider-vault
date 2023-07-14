@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package provider
 
 import (
@@ -7,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-version"
@@ -16,12 +20,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/command/config"
+	"k8s.io/utils/pointer"
 
 	"github.com/hashicorp/terraform-provider-vault/helper"
 	"github.com/hashicorp/terraform-provider-vault/internal/consts"
 )
 
-const DefaultMaxHTTPRetries = 2
+const (
+	DefaultMaxHTTPRetries = 2
+	enterpriseMetadata    = "ent"
+)
 
 var (
 	MaxHTTPRetriesCCC int
@@ -30,6 +38,10 @@ var (
 	VaultVersion110 = version.Must(version.NewSemver(consts.VaultVersion110))
 	VaultVersion111 = version.Must(version.NewSemver(consts.VaultVersion111))
 	VaultVersion112 = version.Must(version.NewSemver(consts.VaultVersion112))
+	VaultVersion113 = version.Must(version.NewSemver(consts.VaultVersion113))
+	VaultVersion114 = version.Must(version.NewSemver(consts.VaultVersion114))
+
+	TokenTTLMinRecommended = time.Minute * 15
 )
 
 // ProviderMeta provides resources with access to the Vault client and
@@ -58,11 +70,11 @@ func (p *ProviderMeta) GetNSClient(ns string) (*api.Client, error) {
 		return nil, err
 	}
 
+	ns = strings.Trim(ns, "/")
 	if ns == "" {
 		return nil, fmt.Errorf("empty namespace not allowed")
 	}
 
-	ns = strings.Trim(ns, "/")
 	if root, ok := p.resourceData.GetOk(consts.FieldNamespace); ok && root.(string) != "" {
 		ns = fmt.Sprintf("%s/%s", root, ns)
 	}
@@ -100,6 +112,18 @@ func (p *ProviderMeta) IsAPISupported(minVersion *version.Version) bool {
 	return ver.GreaterThanOrEqual(minVersion)
 }
 
+// IsEnterpriseSupported returns a boolean
+// describing whether the ProviderMeta
+// vaultVersion supports enterprise
+// features.
+func (p *ProviderMeta) IsEnterpriseSupported() bool {
+	ver := p.GetVaultVersion()
+	if ver == nil {
+		return false
+	}
+	return strings.Contains(ver.Metadata(), enterpriseMetadata)
+}
+
 // GetVaultVersion returns the providerMeta
 // vaultVersion attribute.
 func (p *ProviderMeta) GetVaultVersion() *version.Version {
@@ -121,34 +145,34 @@ func (p *ProviderMeta) validate() error {
 // NewProviderMeta sets up the Provider to service Vault requests.
 // It is meant to be used as a schema.ConfigureFunc.
 func NewProviderMeta(d *schema.ResourceData) (interface{}, error) {
+	if d == nil {
+		return nil, fmt.Errorf("nil ResourceData provided")
+	}
 	clientConfig := api.DefaultConfig()
 	addr := d.Get(consts.FieldAddress).(string)
 	if addr != "" {
 		clientConfig.Address = addr
 	}
+	clientConfig.CloneTLSConfig = true
 
-	clientAuthI := d.Get(consts.FieldClientAuth).([]interface{})
-	if len(clientAuthI) > 1 {
-		return nil, fmt.Errorf("client_auth block may appear only once")
-	}
-
-	clientAuthCert := ""
-	clientAuthKey := ""
-	if len(clientAuthI) == 1 {
-		clientAuth := clientAuthI[0].(map[string]interface{})
-		clientAuthCert = clientAuth[consts.FieldCertFile].(string)
-		clientAuthKey = clientAuth[consts.FieldKeyFile].(string)
-	}
-
-	err := clientConfig.ConfigureTLS(&api.TLSConfig{
+	tlsConfig := &api.TLSConfig{
 		CACert:        d.Get(consts.FieldCACertFile).(string),
 		CAPath:        d.Get(consts.FieldCACertDir).(string),
 		Insecure:      d.Get(consts.FieldSkipTLSVerify).(bool),
 		TLSServerName: d.Get(consts.FieldTLSServerName).(string),
+	}
 
-		ClientCert: clientAuthCert,
-		ClientKey:  clientAuthKey,
-	})
+	if _, ok := d.GetOk(consts.FieldClientAuth); ok {
+		prefix := fmt.Sprintf("%s.0.", consts.FieldClientAuth)
+		if v, ok := d.GetOk(prefix + consts.FieldCertFile); ok {
+			tlsConfig.ClientCert = v.(string)
+		}
+		if v, ok := d.GetOk(prefix + consts.FieldKeyFile); ok {
+			tlsConfig.ClientKey = v.(string)
+		}
+	}
+
+	err := clientConfig.ConfigureTLS(tlsConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to configure TLS for Vault API: %s", err)
 	}
@@ -196,37 +220,87 @@ func NewProviderMeta(d *schema.ResourceData) (interface{}, error) {
 
 	MaxHTTPRetriesCCC = d.Get("max_retries_ccc").(int)
 
-	// Try and get the token from the config or token helper
-	token, err := GetToken(d)
-	if err != nil {
-		return nil, err
-	}
+	// Set the namespace to the requested namespace, if provided
+	namespace := d.Get(consts.FieldNamespace).(string)
 
 	authLogin, err := GetAuthLogin(d)
 	if err != nil {
 		return nil, err
 	}
 
+	var token string
 	if authLogin != nil {
-		client.SetNamespace(authLogin.Namespace())
-		secret, err := authLogin.Login(client)
+		// the clone is only used to auth to Vault
+		clone, err := client.Clone()
+		if err != nil {
+			return nil, err
+		}
+
+		if authLogin.Namespace() != "" {
+			// the namespace configured on the auth_login takes precedence over the provider's
+			// for authentication only.
+			clone.SetNamespace(authLogin.Namespace())
+		} else if namespace != "" {
+			// authenticate to the engine in the provider's namespace
+			clone.SetNamespace(namespace)
+		}
+
+		secret, err := authLogin.Login(clone)
 		if err != nil {
 			return nil, err
 		}
 
 		token = secret.Auth.ClientToken
+	} else {
+		// try and get the token from the config or token helper
+		token, err = GetToken(d)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if token != "" {
 		client.SetToken(token)
 	}
 
-	skipChildToken := d.Get("skip_child_token").(bool)
-	if !skipChildToken {
-		err := setChildToken(d, client)
+	warnMinTokenTTL(tokenInfo)
+
+	var tokenNamespace string
+	if v, ok := tokenInfo.Data[consts.FieldNamespacePath]; ok {
+		tokenNamespace = strings.Trim(v.(string), "/")
+	}
+
+	if !d.Get(consts.FieldSkipChildToken).(bool) {
+		// a child token is always created in the namespace of the parent token.
+		token, err = createChildToken(d, client, tokenNamespace)
 		if err != nil {
 			return nil, err
 		}
+
+		client.SetToken(token)
+	}
+
+	if namespace == "" && tokenNamespace != "" {
+		// set the provider namespace to the token's namespace
+		// this is here to ensure that do not break any configurations that are relying on the
+		// token's namespace being used during resource provisioning.
+		// In the future we should drop support for this behaviour.
+		log.Printf("[WARN] The provider namespace should be set whenever "+
+			"using namespaced auth tokens. You may want to update your provider "+
+			"configuration's namespace to be %q, before executing terraform. "+
+			"Future releases may not support this type of configuration.", tokenNamespace)
+
+		namespace = tokenNamespace
+		// set the namespace on the provider to ensure that all child
+		// namespace paths are properly honoured.
+		if err := d.Set(consts.FieldNamespace, namespace); err != nil {
+			return nil, err
+		}
+	}
+
+	if namespace != "" {
+		// set the namespace on the parent client
+		client.SetNamespace(namespace)
 	}
 
 	var vaultVersion *version.Version
@@ -245,17 +319,34 @@ func NewProviderMeta(d *schema.ResourceData) (interface{}, error) {
 		}
 		vaultVersion = ver
 	}
-	// Set the namespace to the requested namespace, if provided
-	namespace := d.Get(consts.FieldNamespace).(string)
-	if namespace != "" {
-		client.SetNamespace(namespace)
-	}
 
 	return &ProviderMeta{
 		resourceData: d,
 		client:       client,
 		vaultVersion: vaultVersion,
 	}, nil
+}
+
+func warnMinTokenTTL(tokenInfo *api.Secret) {
+	// tokens with "root" policies tend to have no TTL set, so there should be no
+	// need to warn in this case.
+	if policies, err := tokenInfo.TokenPolicies(); err == nil {
+		for _, v := range policies {
+			if v == "root" {
+				return
+			}
+		}
+	}
+
+	// we can ignore the error here, any issue with the token will be handled later
+	// on during resource provisioning
+	if tokenTTL, err := tokenInfo.TokenTTL(); err == nil {
+		if tokenTTL < TokenTTLMinRecommended {
+			log.Printf("[WARN] The token TTL %s is below the minimum "+
+				"recommended value of %s, this can result in unexpected Vault "+
+				"provisioning failures e.g. 403 permission denied", tokenTTL, TokenTTLMinRecommended)
+		}
+	}
 }
 
 // GetClient is meant to be called from a schema.Resource function.
@@ -333,6 +424,21 @@ func IsAPISupported(meta interface{}, minVersion *version.Version) bool {
 	return p.IsAPISupported(minVersion)
 }
 
+// IsEnterpriseSupported confirms that
+// the providerMeta API supports enterprise
+// features.
+func IsEnterpriseSupported(meta interface{}) bool {
+	var p *ProviderMeta
+	switch v := meta.(type) {
+	case *ProviderMeta:
+		p = v
+	default:
+		panic(fmt.Sprintf("meta argument must be a %T, not %T", p, meta))
+	}
+
+	return p.IsEnterpriseSupported()
+}
+
 func getVaultVersion(client *api.Client) (*version.Version, error) {
 	resp, err := client.Sys().SealStatus()
 	if err != nil {
@@ -350,47 +456,42 @@ func getVaultVersion(client *api.Client) (*version.Version, error) {
 	return version.Must(version.NewSemver(resp.Version)), nil
 }
 
-func setChildToken(d *schema.ResourceData, c *api.Client) error {
+func createChildToken(d *schema.ResourceData, c *api.Client, namespace string) (string, error) {
 	tokenName := d.Get("token_name").(string)
 	if tokenName == "" {
 		tokenName = "terraform"
 	}
 
+	// the clone is only used to auth to Vault
+	clone, err := c.Clone()
+	if err != nil {
+		return "", err
+	}
+
+	if namespace != "" {
+		log.Printf("[INFO] Creating child token, namespace=%q", namespace)
+		clone.SetNamespace(namespace)
+	}
 	// In order to enforce our relatively-short lease TTL, we derive a
-	// temporary child token that inherits all of the policies of the
+	// temporary child token that inherits all the policies of the
 	// token we were given but expires after max_lease_ttl_seconds.
 	//
 	// The intent here is that Terraform will need to re-fetch any
-	// secrets on each run and so we limit the exposure risk of secrets
+	// secrets on each run, so we limit the exposure risk of secrets
 	// that end up stored in the Terraform state, assuming that they are
 	// credentials that Vault is able to revoke.
 	//
 	// Caution is still required with state files since not all secrets
 	// can explicitly be revoked, and this limited scope won't apply to
 	// any secrets that are *written* by Terraform to Vault.
-
-	// Set the namespace to the token's namespace only for the
-	// child token creation
-	tokenInfo, err := c.Auth().Token().LookupSelf()
-	if err != nil {
-		return err
-	}
-	if tokenNamespaceRaw, ok := tokenInfo.Data["namespace_path"]; ok {
-		tokenNamespace := tokenNamespaceRaw.(string)
-		if tokenNamespace != "" {
-			c.SetNamespace(tokenNamespace)
-		}
-	}
-
-	renewable := false
-	childTokenLease, err := c.Auth().Token().Create(&api.TokenCreateRequest{
+	childTokenLease, err := clone.Auth().Token().Create(&api.TokenCreateRequest{
 		DisplayName:    tokenName,
 		TTL:            fmt.Sprintf("%ds", d.Get("max_lease_ttl_seconds").(int)),
 		ExplicitMaxTTL: fmt.Sprintf("%ds", d.Get("max_lease_ttl_seconds").(int)),
-		Renewable:      &renewable,
+		Renewable:      pointer.Bool(false),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create limited child token: %s", err)
+		return "", fmt.Errorf("failed to create limited child token: %s", err)
 	}
 
 	childToken := childTokenLease.Auth.ClientToken
@@ -398,10 +499,7 @@ func setChildToken(d *schema.ResourceData, c *api.Client) error {
 
 	log.Printf("[INFO] Using Vault token with the following policies: %s", strings.Join(policies, ", "))
 
-	// Set the token to the generated child token
-	c.SetToken(childToken)
-
-	return nil
+	return childToken, nil
 }
 
 func GetToken(d *schema.ResourceData) (string, error) {

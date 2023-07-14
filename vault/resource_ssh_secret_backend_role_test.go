@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package vault
 
 import (
@@ -68,33 +71,56 @@ func TestAccSSHSecretBackendRole(t *testing.T) {
 		resource.TestCheckResourceAttr(resourceName, "ttl", "43200"),
 	)
 
-	resource.Test(t, resource.TestCase{
-		Providers:    testProviders,
-		PreCheck:     func() { testutil.TestAccPreCheck(t) },
-		CheckDestroy: testAccSSHSecretBackendRoleCheckDestroy,
-		Steps: []resource.TestStep{
+	getCheckFuncs := func(isUpdate bool) resource.TestCheckFunc {
+		return func(state *terraform.State) error {
+			var checks []resource.TestCheckFunc
+			if isUpdate {
+				checks = append(checks, updateCheckFuncs...)
+			} else {
+				checks = append(checks, initialCheckFuncs...)
+			}
+
+			meta := testProvider.Meta().(*provider.ProviderMeta)
+			isVaultVersion112 := meta.IsAPISupported(provider.VaultVersion112)
+			if isVaultVersion112 {
+				if isUpdate {
+					checks = append(checks,
+						resource.TestCheckResourceAttr(resourceName, "allowed_domains_template", "true"),
+					)
+				} else {
+					checks = append(checks,
+						resource.TestCheckResourceAttr(resourceName, "allowed_domains_template", "false"),
+					)
+				}
+			}
+			return resource.ComposeAggregateTestCheckFunc(checks...)(state)
+		}
+	}
+
+	getSteps := func(extraFields string) []resource.TestStep {
+		return []resource.TestStep{
 			{
 				Config: testAccSSHSecretBackendRoleConfig_basic(name, backend),
-				Check:  resource.ComposeTestCheckFunc(initialCheckFuncs...),
+				Check:  getCheckFuncs(false),
 			},
 			{
-				Config: testAccSSHSecretBackendRoleConfig_updated(name, backend, false, true),
+				Config: testAccSSHSecretBackendRoleConfig_updated(name, backend, false, true, extraFields),
 				Check: resource.ComposeTestCheckFunc(
-					resource.ComposeTestCheckFunc(updateCheckFuncs...),
+					getCheckFuncs(true),
 					resource.TestCheckResourceAttr(resourceName, "allowed_user_key_lengths.rsa", "2048"),
 				),
 			},
 			{
 				Config: testAccSSHSecretBackendRoleConfig_updated(
-					name, backend, true, true),
+					name, backend, true, true, extraFields),
 				ExpectError: regexp.MustCompile(`"allowed_user_key_config": conflicts with allowed_user_key_lengths`),
 				Destroy:     false,
 			},
 			{
 				Config: testAccSSHSecretBackendRoleConfig_updated(
-					name, backend, true, false),
+					name, backend, true, false, extraFields),
 				Check: resource.ComposeTestCheckFunc(
-					resource.ComposeTestCheckFunc(updateCheckFuncs...),
+					getCheckFuncs(true),
 					resource.TestCheckResourceAttr(resourceName, "allowed_user_key_config.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "allowed_user_key_config.0.type", "rsa"),
 					resource.TestCheckResourceAttr(resourceName, "allowed_user_key_config.0.lengths.#", "3"),
@@ -111,8 +137,34 @@ func TestAccSSHSecretBackendRole(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
-		},
+		}
+	}
+
+	t.Run("vault-1.11-and-below", func(t *testing.T) {
+		resource.Test(t, resource.TestCase{
+			Providers: testProviders,
+			PreCheck: func() {
+				testutil.TestAccPreCheck(t)
+				SkipIfAPIVersionGTE(t, testProvider.Meta(), provider.VaultVersion112)
+
+			},
+			CheckDestroy: testAccSSHSecretBackendRoleCheckDestroy,
+			Steps:        getSteps(""),
+		})
 	})
+	t.Run("vault-1.12-and-up", func(t *testing.T) {
+		resource.Test(t, resource.TestCase{
+			Providers: testProviders,
+			PreCheck: func() {
+				testutil.TestAccPreCheck(t)
+				SkipIfAPIVersionLT(t, testProvider.Meta(), provider.VaultVersion112)
+
+			},
+			CheckDestroy: testAccSSHSecretBackendRoleCheckDestroy,
+			Steps:        getSteps("allowed_domains_template = true"),
+		})
+	})
+
 }
 
 func TestAccSSHSecretBackendRoleOTP_basic(t *testing.T) {
@@ -133,6 +185,33 @@ func TestAccSSHSecretBackendRoleOTP_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("vault_ssh_secret_backend_role.test_role", "cidr_list", "0.0.0.0/0"),
 				),
 			},
+		},
+	})
+}
+
+func TestAccSSHSecretBackendRole_template(t *testing.T) {
+	backend := acctest.RandomWithPrefix("tf-test/ssh")
+	name := acctest.RandomWithPrefix("tf-test-role")
+	resourceName := "vault_ssh_secret_backend_role.test_role"
+
+	resource.Test(t, resource.TestCase{
+		Providers: testProviders,
+		PreCheck: func() {
+			testutil.TestAccPreCheck(t)
+			SkipIfAPIVersionLT(t, testProvider.Meta(), provider.VaultVersion112)
+		},
+		CheckDestroy: testAccSSHSecretBackendRoleCheckDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccSSHSecretBackendRoleConfig_template(name, backend),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "name", name),
+					resource.TestCheckResourceAttr(resourceName, "backend", backend),
+					resource.TestCheckResourceAttr(resourceName, "default_user", "ssh-{{identity.entity.id}}-user"),
+					resource.TestCheckResourceAttr(resourceName, "default_user_template", "true"),
+				),
+			},
+			testutil.GetImportTestStep(resourceName, false, nil),
 		},
 	})
 }
@@ -179,7 +258,7 @@ resource "vault_ssh_secret_backend_role" "test_role" {
 }
 
 func testAccSSHSecretBackendRoleConfig_updated(name, path string, withAllowedUserKeys,
-	withAllowedUserKeyLen bool,
+	withAllowedUserKeyLen bool, extraFields string,
 ) string {
 	fragments := []string{
 		fmt.Sprintf(`
@@ -227,7 +306,8 @@ resource "vault_ssh_secret_backend_role" "test_role" {
   algorithm_signer         = "rsa-sha2-256"
   max_ttl                  = "86400"
   ttl                      = "43200"
-`, name))
+  %s
+`, name, extraFields))
 
 	if withAllowedUserKeys {
 		fragments = append(fragments, `dynamic "allowed_user_key_config" {
@@ -269,4 +349,25 @@ resource "vault_ssh_secret_backend_role" "test_role" {
 	cidr_list                = "0.0.0.0/0"
 }
 `, path, name)
+}
+
+func testAccSSHSecretBackendRoleConfig_template(name, path string) string {
+	config := fmt.Sprintf(`
+resource "vault_mount" "example" {
+  path = "%s"
+  type = "ssh"
+}
+
+resource "vault_ssh_secret_backend_role" "test_role" {
+  name                    = "%s"
+  backend                 = vault_mount.example.path
+  default_user_template   = true
+  default_user            = "ssh-{{identity.entity.id}}-user"
+  key_type                = "ca"
+  allow_user_certificates = true
+}
+
+`, path, name)
+
+	return config
 }
