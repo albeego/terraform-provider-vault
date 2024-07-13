@@ -60,7 +60,7 @@ func sysPluginWrite(d *schema.ResourceData, meta interface{}) error {
 
 	registerPluginInput := api.RegisterPluginInput{
 		Name:    name,
-		Type:    pluginType,
+		Type:    api.PluginType(pluginType),
 		Command: name,
 		SHA256:  sha256value,
 	}
@@ -91,7 +91,7 @@ func sysPluginDelete(d *schema.ResourceData, meta interface{}) error {
 
 	deregisterPluginInput := api.DeregisterPluginInput{
 		Name: name,
-		Type: pluginType,
+		Type: api.PluginType(pluginType),
 	}
 	e = client.Sys().DeregisterPlugin(&deregisterPluginInput)
 	if e != nil {
