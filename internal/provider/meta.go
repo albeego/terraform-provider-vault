@@ -262,57 +262,57 @@ func NewProviderMeta(d *schema.ResourceData) (interface{}, error) {
 
 	if token != "" {
 		client.SetToken(token)
-	}
 
-	if client.Token() == "" {
-		return nil, errors.New("no vault token set on Client")
-	}
+		if client.Token() == "" {
+			return nil, errors.New("no vault token set on Client")
+		}
 
-	tokenInfo, err := client.Auth().Token().LookupSelf()
-	if err != nil {
-		return nil, fmt.Errorf("failed to lookup token, err=%w", err)
-	}
-
-	warnMinTokenTTL(tokenInfo)
-
-	var tokenNamespace string
-	if v, ok := tokenInfo.Data[consts.FieldNamespacePath]; ok {
-		tokenNamespace = strings.Trim(v.(string), "/")
-	}
-
-	if !d.Get(consts.FieldSkipChildToken).(bool) {
-		// a child token is always created in the namespace of the parent token.
-		token, err = createChildToken(d, client, tokenNamespace)
+		tokenInfo, err := client.Auth().Token().LookupSelf()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to lookup token, err=%w", err)
 		}
 
-		client.SetToken(token)
-	}
+		warnMinTokenTTL(tokenInfo)
 
-	if namespace == "" && tokenNamespace != "" {
-		// set the provider namespace to the token's namespace
-		// this is here to ensure that do not break any configurations that are relying on the
-		// token's namespace being used during resource provisioning.
-		// In the future we should drop support for this behaviour.
-		log.Printf("[WARN] The provider namespace should be set whenever "+
-			"using namespaced auth tokens. You may want to update your provider "+
-			"configuration's namespace to be %q, before executing terraform. "+
-			"Future releases may not support this type of configuration.", tokenNamespace)
-
-		namespace = tokenNamespace
-		// set the namespace on the provider to ensure that all child
-		// namespace paths are properly honoured.
-		if err := d.Set(consts.FieldNamespace, namespace); err != nil {
-			return nil, err
+		var tokenNamespace string
+		if v, ok := tokenInfo.Data[consts.FieldNamespacePath]; ok {
+			tokenNamespace = strings.Trim(v.(string), "/")
 		}
-	}
 
-	if namespace != "" {
-		// set the namespace on the parent client
-		client.SetNamespace(namespace)
-	}
+		if !d.Get(consts.FieldSkipChildToken).(bool) {
+			// a child token is always created in the namespace of the parent token.
+			token, err = createChildToken(d, client, tokenNamespace)
+			if err != nil {
+				return nil, err
+			}
 
+			client.SetToken(token)
+		}
+
+		if namespace == "" && tokenNamespace != "" {
+			// set the provider namespace to the token's namespace
+			// this is here to ensure that do not break any configurations that are relying on the
+			// token's namespace being used during resource provisioning.
+			// In the future we should drop support for this behaviour.
+			log.Printf("[WARN] The provider namespace should be set whenever "+
+				"using namespaced auth tokens. You may want to update your provider "+
+				"configuration's namespace to be %q, before executing terraform. "+
+				"Future releases may not support this type of configuration.", tokenNamespace)
+
+			namespace = tokenNamespace
+			// set the namespace on the provider to ensure that all child
+			// namespace paths are properly honoured.
+			if err := d.Set(consts.FieldNamespace, namespace); err != nil {
+				return nil, err
+			}
+		}
+
+		if namespace != "" {
+			// set the namespace on the parent client
+			client.SetNamespace(namespace)
+		}
+
+	}
 	var vaultVersion *version.Version
 	if v, ok := d.GetOk(consts.FieldVaultVersionOverride); ok {
 		ver, err := version.NewVersion(v.(string))
